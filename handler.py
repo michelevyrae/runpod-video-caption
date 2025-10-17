@@ -84,7 +84,12 @@ def handler(event):
             raise ValueError("Nessun frame estratto dal video")
         
         # Processa con il modello
-        inputs = processor(text=prompt, images=frames, return_tensors="pt").to(model.device)
+	inputs = processor(
+	    text=prompt, 
+ 	   images=frames, 
+ 	   padding=True,
+ 	   return_tensors="pt"
+	).to(model.device)        
         output = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
         response_text = processor.decode(output[0], skip_special_tokens=True)
         
