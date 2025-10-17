@@ -1,9 +1,6 @@
 import runpod
 import torch
 import numpy as np
-print(f"Numpy version: {np.__version__}")  # Debug
-print(f"Numpy available: {np is not None}")  # Debug
-
 from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration
 import requests
 import av
@@ -51,7 +48,11 @@ def handler(event):
             container = av.open(video_path)
             total_frames = container.streams.video[0].frames
             indices = np.arange(0, total_frames, total_frames / 8).astype(int)
-            video_frames = read_video_pyav(container, indices)
+            video_frames_np = read_video_pyav(container, indices)
+            
+            # Converti numpy array in torch tensor PRIMA del processor
+            video_frames = torch.from_numpy(video_frames_np).float()
+            
             container.close()
         finally:
             os.remove(video_path)
