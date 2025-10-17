@@ -7,3 +7,7 @@ numpy
 av
 sentencepiece
 protobuf
+opencv-python-headless
+requests
+
+
