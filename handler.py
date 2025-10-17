@@ -1,8 +1,11 @@
 import runpod
 import torch
+import numpy as np
+print(f"Numpy version: {np.__version__}")  # Debug
+print(f"Numpy available: {np is not None}")  # Debug
+
 from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration
 import requests
-import numpy as np
 import av
 import tempfile
 import os
@@ -78,6 +81,7 @@ def handler(event):
         }
     
     except Exception as e:
-        return {"error": str(e)}
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 runpod.serverless.start({"handler": handler})
