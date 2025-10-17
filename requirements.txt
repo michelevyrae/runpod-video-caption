@@ -1,0 +1,7 @@
+runpod
+torch
+transformers
+accelerate
+pillow
+numpy
+av
