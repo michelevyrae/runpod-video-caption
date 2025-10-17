@@ -2,8 +2,8 @@ import runpod
 import torch
 from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration
 import requests
-import cv2
 import numpy as np
+import av
 import tempfile
 import os
 
@@ -15,30 +15,17 @@ model = LlavaNextVideoForConditionalGeneration.from_pretrained(
     device_map="auto"
 )
 
-def extract_frames_from_video(video_path, num_frames=8):
-    """Estrae frame uniformemente dal video e restituisce numpy array"""
-    cap = cv2.VideoCapture(video_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    if total_frames == 0:
-        raise ValueError("Video vuoto o corrotto")
-    
-    indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-    
+def read_video_pyav(container, indices):
     frames = []
-    for idx in indices:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-        ret, frame = cap.read()
-        if ret:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frames.append(frame_rgb)
-    
-    cap.release()
-    
-    if not frames:
-        raise ValueError("Nessun frame estratto")
-    
-    return np.stack(frames)
+    container.seek(0)
+    start_index = indices[0]
+    end_index = indices[-1]
+    for i, frame in enumerate(container.decode(video=0)):
+        if i > end_index:
+            break
+        if i >= start_index and i in indices:
+            frames.append(frame)
+    return np.stack([x.to_ndarray(format="rgb24") for x in frames])
 
 def handler(event):
     try:
@@ -58,7 +45,11 @@ def handler(event):
             video_path = tmp_file.name
         
         try:
-            video_frames = extract_frames_from_video(video_path, num_frames=8)
+            container = av.open(video_path)
+            total_frames = container.streams.video[0].frames
+            indices = np.arange(0, total_frames, total_frames / 8).astype(int)
+            video_frames = read_video_pyav(container, indices)
+            container.close()
         finally:
             os.remove(video_path)
         
